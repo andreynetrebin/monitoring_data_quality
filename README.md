@@ -15,12 +15,12 @@ monitoring_data_quality/
 │   ├── db_operations.py         # Операции с базами данных (запросы, вставки и т.д.)
 │   └── db_schema.py             # Определение схемы баз данных (создание таблиц и т.д.)
 │
-├── export/
+├── export_data/
 │   ├── __init__.py
 │   ├── csv_export.py            # Экспорт данных в CSV
 │   └── report_export.py         # Экспорт отчетов
 │
-├── import/
+├── import_data/
 │   ├── __init__.py
 │   ├── csv_import.py            # Импорт данных из CSV
 │   └── data_loader.py           # Загрузка данных в базу

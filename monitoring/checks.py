@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 from database.db_connection import DatabaseConnection
 from database.db_operations import DBOperations
-from export.csv_export import export_data_to_csv
+from export_data.csv_export import export_data_to_csv
 
 def run_checks(monitoring_conn):
     """Проведение проверок и формирование отчета."""

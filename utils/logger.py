@@ -1,7 +1,8 @@
 import logging
 import os
 
-def setup_logger(log_file='app.log', log_level=logging.INFO):
+
+def setup_logger(log_file='app.log', log_level=logging.DEBUG):
     """Настройка логирования."""
     # Создание директории для логов, если она не существует
     if not os.path.exists('logs'):

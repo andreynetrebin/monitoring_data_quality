@@ -55,4 +55,3 @@ def load_data_to_netezza_from_select(conn, table_name, select_query, distribute_
             logging.info(f"Данные успешно загружены в таблицу {table_name} из внешнего файла {output_filename}.")
     except Exception as e:
         logging.error(f"Ошибка при загрузке данных в Netezza: {e}")
-

@@ -1,21 +1,25 @@
-# export/csv_export
+# export_data/csv_export
 import logging
+import csv
 
-def export_data_to_csv_with_copy(conn, query, csv_file):
+
+def export_data_to_csv_with_copy(cur, query, csv_file):
     """Выгрузка данных из базы данных в CSV файл с использованием COPY."""
     try:
         with open(csv_file, 'w', newline='') as csvfile:
-            with conn.get_cursor() as cur:
-                cur.copy_expert(query, csvfile)
+            cur.copy_expert(query, csvfile)
         logging.info(f"Данные выгружены в {csv_file}")
+        return True  # Возвращаем True при успешном экспорте
     except Exception as e:
         logging.error(f"Ошибка при выгрузке данных в CSV: {e}")
+        return False  # Возвращаем False при ошибке
+
 
 def export_data_to_csv(conn, query, csv_file):
     """Выгрузка данных из базы данных в CSV файл с ручной записью заголовков и данных."""
     try:
         with open(csv_file, 'w', newline='') as csvfile:
-            with conn.get_cursor() as cur:
+            with conn.cursor() as cur:
                 # Выполняем запрос и получаем данные
                 cur.execute(query)
                 # Получаем названия колонок
@@ -29,7 +33,20 @@ def export_data_to_csv(conn, query, csv_file):
     except Exception as e:
         logging.error(f"Ошибка при выгрузке данных в CSV: {e}")
 
-def from_netezza_export_to_csv_with_offset(netezza_conn, base_query, directory, output_file_base, batch_size=20000):
+
+def export_results_to_csv(results, csv_file):
+    """Экспорт результатов выполнения запроса в CSV файл."""
+    try:
+        with open(csv_file, 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile, delimiter=';')
+            # Записываем данные в CSV
+            writer.writerows(results)
+        logging.info(f"Результаты выгружены в {csv_file}")
+    except Exception as e:
+        logging.error(f"Ошибка при выгрузке результатов в CSV: {e}")
+
+
+def from_netezza_export_to_csv_with_offset(cur, base_query, directory, output_file_base, batch_size=20000):
     """Экспорт данных из Netezza в CSV с использованием CREATE EXTERNAL TABLE и смещения."""
     offset = 0
     while True:
@@ -38,7 +55,7 @@ def from_netezza_export_to_csv_with_offset(netezza_conn, base_query, directory, 
 
         # Создание внешней таблицы для выгрузки
         external_table_query = f"""
-        CREATE EXTERNAL TABLE '{directory}/{output_file_base}_{offset}.csv'
+        CREATE EXTERNAL TABLE '{directory}\\{output_file_base}_{offset}.csv'
         USING (
             IncludeHeader   
             DELIMITER ';'
@@ -49,19 +66,18 @@ def from_netezza_export_to_csv_with_offset(netezza_conn, base_query, directory, 
         {query};
         """
 
-        with netezza_conn.cursor() as cur:
-            # Создание внешней таблицы и выгрузка данных
-            cur.execute(external_table_query)
+        # Выполнение запроса на создание внешней таблицы и выгрузку данных
+        cur.execute(external_table_query)
 
-            # Проверка количества выгруженных строк
-            rows_affected = cur.rowcount
-            logging.info(f"Выгружено строк: {rows_affected} (offset: {offset})")
+        # Проверка количества выгруженных строк
+        rows_affected = cur.rowcount
+        logging.info(f"Выгружено строк: {rows_affected} (offset: {offset})")
 
-            # Увеличение смещения
-            offset += batch_size
+        # Увеличение смещения
+        offset += batch_size
 
-            # Если выгружено меньше, чем batch_size, значит, данные закончились
-            if rows_affected < batch_size:
-                break
+        # Если выгружено меньше, чем batch_size, значит, данные закончились
+        if rows_affected < batch_size:
+            break
 
     logging.info("Выгрузка завершена.")

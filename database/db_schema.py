@@ -1,6 +1,7 @@
 import logging
 from config import load_db_config
 
+
 def create_table_if_not_exists(cur, table_name, columns, index_columns=None):
     """
     Создание таблицы, если она не существует, и индекса по указанным столбцам.
@@ -11,6 +12,7 @@ def create_table_if_not_exists(cur, table_name, columns, index_columns=None):
     """
     # Формирование строки с определением столбцов
     columns_definition = ', '.join([f"{col_name} {col_type}" for col_name, col_type in columns.items()])
+    # drop_table_if_exists(cur, table_name)
 
     # SQL-запрос для создания таблицы
     create_table_query = f"""
@@ -48,17 +50,27 @@ def create_table_if_not_exists(cur, table_name, columns, index_columns=None):
     except Exception as e:
         logging.error(f"Ошибка при создании таблицы или индекса: {e}")
 
-def drop_table_if_exists(cur, table_name):
+
+def drop_table_if_exists(cur, table_name, db_type):
     """
     Удаление таблицы, если она существует.
     :param cur: Курсор для выполнения SQL-запросов.
     :param table_name: Имя таблицы, которую нужно удалить.
+    :param db_type: Тип базы данных ('postgresql' или 'netezza').
     """
     try:
-        cur.execute(f"DROP TABLE IF EXISTS {table_name};")
+        if db_type.lower() == 'postgresql':
+            query = f"DROP TABLE IF EXISTS {table_name};"
+        elif db_type.lower() == 'netezza':
+            query = f"DROP TABLE {table_name} IF EXISTS;"
+        else:
+            raise ValueError("Неподдерживаемый тип базы данных. Используйте 'postgresql' или 'netezza'.")
+
+        cur.execute(query)
         logging.info(f"Таблица {table_name} удалена, если существовала.")
     except Exception as e:
         logging.error(f"Ошибка при удалении таблицы {table_name}: {e}")
+
 
 def create_netezza_table(cur, table_name, columns, distribute_column):
     """
@@ -78,6 +90,25 @@ def create_netezza_table(cur, table_name, columns, distribute_column):
     )
     DISTRIBUTE ON ({distribute_column});
     """
+
+    try:
+        cur.execute(create_table_query)
+        logging.info(f"Таблица {table_name} создана в Netezza.")
+    except Exception as e:
+        logging.error(f"Ошибка при создании таблицы {table_name} в Netezza: {e}")
+
+
+def create_netezza_table_from_select(cur, select_query, table_name, distribute_column):
+    """
+    Создание таблицы в Netezza.
+    :param cur: Курсор для выполнения SQL-запросов.
+    :select_query: Запрос для формирвания таблицы
+    :param table_name: Имя создаваемой таблицы.
+    :param distribute_column: Имя столбца для распределения.
+    """
+
+    # SQL-запрос для создания таблицы в Netezza
+    create_table_query = f"CREATE TABLE {table_name} AS ({select_query}) DISTRIBUTE ON ({distribute_column});"
 
     try:
         cur.execute(create_table_query)

@@ -1,30 +1,73 @@
+import logging
 import psycopg2
 import nzpy
-from config import load_db_config
+from utils.logger import setup_logger  # Импортируем функцию настройки логирования
+
+# Настройка логирования
+setup_logger()  # Вызываем функцию для настройки логирования
+
 
 class DatabaseConnection:
     def __init__(self, db_config):
-        self.db_type = db_config.get('type', 'postgresql')  # Определяем тип базы данных
+        logging.info(f"Инициализация подключения к базе данных с конфигурацией: {db_config}")
+        self.db_type = db_config.get('type')  # Определяем тип базы данных
         if self.db_type == 'postgresql':
-            self.conn = psycopg2.connect(**db_config)
+            self.conn = self.connect_to_postgresql(db_config)
         elif self.db_type == 'netezza':
             self.conn = self.connect_to_netezza(db_config)
         else:
+            logging.error(f"Unsupported database type: {self.db_type}")
             raise ValueError("Unsupported database type")
 
     def connect_to_netezza(self, db_config):
         """Подключение к базе данных Netezza."""
-        return nzpy.connect(
-            host=db_config['host'],
-            port=int(db_config['port']),
-            user=db_config['user'],
-            password=db_config['password'],
-            database=db_config['dbname'],
-            timeout=3600  # Установите таймаут в 3600 секунд
-        )
+        try:
+            connection = nzpy.connect(
+                host=db_config['host'],
+                port=int(db_config['port']),
+                user=db_config['user'],
+                password=db_config['password'],
+                database=db_config['dbname'],
+                timeout=3600  # Установите таймаут в 3600 секунд
+            )
+            logging.info("Успешное подключение к Netezza.")
+            return connection
+        except Exception as e:
+            logging.error(f"Ошибка при подключении к Netezza: {e}")
+            raise
+
+    def connect_to_postgresql(self, db_config):
+        """Подключение к базе данных PostgreSQL."""
+        try:
+            connection = psycopg2.connect(
+                host=db_config['host'],
+                port=db_config['port'],
+                user=db_config['user'],
+                password=db_config['password'],
+                database=db_config['dbname'],
+            )
+            logging.info("Успешное подключение к PostgreSQL.")
+            return connection
+        except Exception as e:
+            logging.error(f"Ошибка при подключении к PostgreSQL: {e}")
+            raise
 
     def get_cursor(self):
+        logging.debug("Получение курсора.")
         return self.conn.cursor()
 
     def close(self):
+        logging.info("Закрытие соединения с базой данных.")
         self.conn.close()
+
+    def commit(self):
+        logging.info("Подтверждение транзакции.")
+        self.conn.commit()
+
+    def __enter__(self):
+        logging.debug("Вход в контекстный менеджер.")
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        logging.debug("Выход из контекстного менеджера.")
+        self.close()

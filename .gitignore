@@ -133,10 +133,10 @@ pip-selfcheck.json
 .idea/**/gradle.xml
 .idea/**/libraries
 
-# Gradle and Maven with auto-import
-# When using Gradle or Maven with auto-import, you should exclude module files,
+# Gradle and Maven with auto-import_data
+# When using Gradle or Maven with auto-import_data, you should exclude module files,
 # since they will be recreated, and may cause churn.  Uncomment if using
-# auto-import.
+# auto-import_data.
 # .idea/artifacts
 # .idea/compiler.xml
 # .idea/jarRepositories.xml
@@ -186,3 +186,4 @@ fabric.properties
 .idea
 config.ini
 logs
+database/queries.py
