@@ -81,22 +81,28 @@ class DBOperations:
         :param table_name: Имя таблицы, в которую будут загружены данные.
         :param external_csv: Имя внешнего csv-файла.
         """
-        with self.connection.get_cursor() as cur:  # Изменено на get_cursor()
-            insert_query = f"""
-            INSERT INTO {table_name}
-            SELECT * FROM 
-            EXTERNAL '{external_csv}'
-            USING
-            (
-                Y2BASE 2000
-                ENCODING 'internal'
-                REMOTESOURCE 'ODBC'
-                ESCAPECHAR '\\'
-            );
-            """
-            cur.execute(insert_query)
-            self.connection.commit()
-            logging.info(f"Данные успешно загружены в таблицу {table_name} из внешнего файла {external_csv}.")
+        try:
+            with self.connection.get_cursor() as cur:  # Изменено на get_cursor()
+                insert_query = f"""
+                INSERT INTO {table_name}
+                SELECT * FROM 
+                EXTERNAL '{external_csv}'
+                USING
+                (
+                    Y2BASE 2000
+                    ENCODING 'internal'
+                    REMOTESOURCE 'ODBC'
+                    ESCAPECHAR '\\'
+                );
+                """
+                cur.execute(insert_query)
+                self.connection.commit()
+                logging.info(f"Данные успешно загружены в таблицу {table_name} из внешнего файла {external_csv}.")
+                return True
+        except Exception as e:
+            logging.error(
+                f"Данные не загружены в таблицу {table_name} из внешнего файла {external_csv}. Возникла ошибка - {e}")
+            return False
 
     def count_total_records(self, table_name):
         """Подсчет общего количества записей в таблице."""
@@ -110,3 +116,17 @@ class DBOperations:
         with self.connection.get_cursor() as cur:  # Изменено на get_cursor()
             cur.execute(query)
             return cur.rowcount
+
+    def insert_data(self, table_name, columns, values):
+        """Универсальный метод для вставки данных в таблицу."""
+        columns_str = ', '.join(columns)
+        placeholders = ', '.join(['%s'] * len(values))
+        query = f"INSERT INTO {table_name} ({columns_str}) VALUES ({placeholders})"
+
+        with self.connection.get_cursor() as cur:
+            cur.execute(query, values)
+            self.connection.commit()  # Подтверждение изменений
+
+    def insert_check_result(self, check_description, record_count):
+        """Вставка результата проверки в таблицу data_check_results."""
+        self.insert_data("data_check_results", ["check_description", "record_count"], [check_description, record_count])
