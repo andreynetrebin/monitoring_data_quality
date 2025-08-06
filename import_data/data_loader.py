@@ -4,10 +4,15 @@ from database.db_schema import create_netezza_table
 
 def load_csv_to_table(cur, csv_file, table_name):
     """Загрузка данных из CSV файла в таблицу."""
-    with open(csv_file, 'r') as f:
-        next(f)  # Пропустить заголовок
-        cur.copy_expert(f"COPY public.{table_name} FROM STDIN WITH CSV DELIMITER ';'", f)
-    logging.info(f"Данные из {csv_file} загружены в таблицу {table_name}.")
+    try:
+        with open(csv_file, 'r') as f:
+            next(f)  # Пропустить заголовок
+            cur.copy_expert(f"COPY public.{table_name} FROM STDIN WITH CSV DELIMITER ';'", f)
+        logging.info(f"Данные из {csv_file} загружены в таблицу {table_name}.")
+        return True
+    except Exception as e:
+        logging.error(f"Ошибка при загрузке данных из CSV: {e}")
+        return False  # Возвращаем False при ошибке
 
 
 def load_data_from_csv(cur, csv_file, table_name):

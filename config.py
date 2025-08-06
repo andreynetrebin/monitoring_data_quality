@@ -1,5 +1,6 @@
 import configparser
 
+
 def load_db_config(filename='config.ini'):
     """Загрузка конфигурации базы данных из INI-файла."""
     config = configparser.ConfigParser()
@@ -28,5 +29,13 @@ def load_db_config(filename='config.ini'):
             'host': config.get('monitoring_db', 'host'),
             'port': config.get('monitoring_db', 'port'),
             'type': config.get('monitoring_db', 'type')
+        },
+        'integrating_db': {
+            'dbname': config.get('integrating_db', 'dbname'),
+            'user': config.get('integrating_db', 'user'),
+            'password': config.get('integrating_db', 'password'),
+            'host': config.get('integrating_db', 'host'),
+            'port': config.get('integrating_db', 'port'),
+            'type': config.get('integrating_db', 'type')
         }
     }
