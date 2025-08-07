@@ -187,3 +187,4 @@ fabric.properties
 config.ini
 logs
 database/queries.py
+processing_state.json
