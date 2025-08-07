@@ -1,5 +1,4 @@
 import logging
-from config import load_db_config
 
 
 def create_table_if_not_exists(cur, table_name, columns, index_columns=None):

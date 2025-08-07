@@ -11,10 +11,16 @@ class DatabaseConnection:
     def __init__(self, db_config):
         logging.info(f"Инициализация подключения к базе данных с конфигурацией: {db_config}")
         self.db_type = db_config.get('type')  # Определяем тип базы данных
+        self.conn = None
+        self.db_config = db_config  # Сохраняем конфигурацию базы данных
+        self.connect()  # Устанавливаем соединение при инициализации
+
+    def connect(self):
+        """Устанавливает соединение с базой данных в зависимости от типа."""
         if self.db_type == 'postgresql':
-            self.conn = self.connect_to_postgresql(db_config)
+            self.conn = self.connect_to_postgresql(self.db_config)
         elif self.db_type == 'netezza':
-            self.conn = self.connect_to_netezza(db_config)
+            self.conn = self.connect_to_netezza(self.db_config)
         else:
             logging.error(f"Unsupported database type: {self.db_type}")
             raise ValueError("Unsupported database type")
@@ -53,16 +59,24 @@ class DatabaseConnection:
             raise
 
     def get_cursor(self):
+        """Получение курсора, проверяя состояние соединения."""
+        if self.conn is None or self.conn.closed:
+            logging.info("Соединение закрыто или отсутствует, пересоздание соединения.")
+            self.connect()  # Пересоздаем соединение
         logging.debug("Получение курсора.")
         return self.conn.cursor()
 
     def close(self):
-        logging.info("Закрытие соединения с базой данных.")
-        self.conn.close()
+        """Закрытие соединения с базой данных."""
+        if self.conn is not None and not self.conn.closed:
+            logging.info("Закрытие соединения с базой данных.")
+            self.conn.close()
 
     def commit(self):
-        logging.info("Подтверждение транзакции.")
-        self.conn.commit()
+        """Подтверждение транзакции."""
+        if self.conn is not None and not self.conn.closed:
+            logging.info("Подтверждение транзакции.")
+            self.conn.commit()
 
     def __enter__(self):
         logging.debug("Вход в контекстный менеджер.")
