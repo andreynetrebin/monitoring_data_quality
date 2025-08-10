@@ -1,10 +1,6 @@
 import logging
 import psycopg2
 import nzpy
-from utils.logger import setup_logger  # Импортируем функцию настройки логирования
-
-# Настройка логирования
-setup_logger()  # Вызываем функцию для настройки логирования
 
 
 class DatabaseConnection:
@@ -60,21 +56,27 @@ class DatabaseConnection:
 
     def get_cursor(self):
         """Получение курсора, проверяя состояние соединения."""
-        if self.conn is None or self.conn.closed:
-            logging.info("Соединение закрыто или отсутствует, пересоздание соединения.")
+        if self.conn is None:
+            logging.info("Соединение отсутствует, пересоздание соединения.")
             self.connect()  # Пересоздаем соединение
-        logging.debug("Получение курсора.")
-        return self.conn.cursor()
+        try:
+            cursor = self.conn.cursor()
+            logging.debug("Получение курсора.")
+            return cursor
+        except Exception as e:
+            logging.error(f"Ошибка при получении курсора: {e}")
+            self.connect()  # Попробуем пересоздать соединение
+            return self.conn.cursor()  # Попробуем снова получить курсор
 
     def close(self):
         """Закрытие соединения с базой данных."""
-        if self.conn is not None and not self.conn.closed:
+        if self.conn is not None:
             logging.info("Закрытие соединения с базой данных.")
             self.conn.close()
 
     def commit(self):
         """Подтверждение транзакции."""
-        if self.conn is not None and not self.conn.closed:
+        if self.conn is not None:
             logging.info("Подтверждение транзакции.")
             self.conn.commit()
 

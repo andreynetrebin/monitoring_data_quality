@@ -1,18 +1,13 @@
 import logging
 from database.db_schema import create_table_if_not_exists, drop_table_if_exists, create_netezza_table, \
     create_netezza_table_from_select
-from export_data.csv_export import export_results_to_csv
+from exporting_data.csv_export import export_results_to_csv
 
 
 class DBOperations:
     def __init__(self, connection, db_type=None):
         self.connection = connection
         self.db_type = db_type
-
-    def execute_query(self, query):
-        with self.connection.get_cursor() as cur:  # Изменено на get_cursor()
-            cur.execute(query)
-            return cur.fetchall()
 
     def execute_query(self, query, csv_file=None):
         """Выполнение SQL-запроса и, при необходимости, экспорт результатов в CSV."""

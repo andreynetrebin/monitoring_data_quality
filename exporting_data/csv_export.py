@@ -1,21 +1,25 @@
-# export_data/csv_export
 import logging
 import csv
 import pandas as pd
 import time
+from os import path
 from database.db_connection import DatabaseConnection
 from database.queries import master_opening_ils, master_closing_ils, historical_opening_ils, historical_closing_ils, \
     historical_opening_ils_portions, historical_closing_ils_portions
-from os import path
 from utils.file_utils import clear_directory, create_directory
+
+# Создание директории temp_data, если она не существует
+temp_data_dir = 'temp_data'
+create_directory(temp_data_dir)
 
 
 def export_data_to_csv_with_copy(cur, query, csv_file):
     """Выгрузка данных из базы данных в CSV файл с использованием COPY."""
     try:
-        with open(csv_file, 'w', newline='') as csvfile:
+        csv_file_path = path.join(temp_data_dir, csv_file)  # Полный путь к файлу
+        with open(csv_file_path, 'w', newline='') as csvfile:
             cur.copy_expert(query, csvfile)
-        logging.info(f"Данные выгружены в {csv_file}")
+        logging.info(f"Данные выгружены в {csv_file_path}")
         return True  # Возвращаем True при успешном экспорте
     except Exception as e:
         logging.error(f"Ошибка при выгрузке данных в CSV: {e}")
@@ -25,7 +29,8 @@ def export_data_to_csv_with_copy(cur, query, csv_file):
 def export_data_to_csv(cur, query, csv_file):
     """Выгрузка данных из базы данных в CSV файл с ручной записью заголовков и данных."""
     try:
-        with open(csv_file, 'w', newline='') as csvfile:
+        csv_file_path = path.join(temp_data_dir, csv_file)  # Полный путь к файлу
+        with open(csv_file_path, 'w', newline='') as csvfile:
             cur.execute(query)
             # Получаем названия колонок
             colnames = [desc[0] for desc in cur.description]
@@ -34,7 +39,7 @@ def export_data_to_csv(cur, query, csv_file):
             # Записываем данные в CSV
             for row in cur.fetchall():
                 csvfile.write(';'.join(map(str, row)) + '\n')
-            logging.info(f"Данные выгружены в {csv_file}")
+            logging.info(f"Данные выгружены в {csv_file_path}")
     except Exception as e:
         logging.error(f"Ошибка при выгрузке данных в CSV: {e}")
 
@@ -55,18 +60,20 @@ def merge_csv_files(file1, file2, output_file, encoding='utf-8'):
     merged_df = pd.merge(df1, df2, on='acc_id', how='left')  # Используем left join
 
     # Сохранение объединенных данных в новый CSV-файл
-    merged_df.to_csv(output_file, index=False, sep=';', encoding=encoding)  # Указываем разделитель
-    logging.info(f"Объединенные данные сохранены в '{output_file}'.")
+    output_file_path = path.join(temp_data_dir, output_file)  # Полный путь к выходному файлу
+    merged_df.to_csv(output_file_path, index=False, sep=';', encoding=encoding)  # Указываем разделитель
+    logging.info(f"Объединенные данные сохранены в '{output_file_path}'.")
 
 
 def export_results_to_csv(results, csv_file):
     """Экспорт результатов выполнения запроса в CSV файл."""
     try:
-        with open(csv_file, 'w', newline='') as csvfile:
+        csv_file_path = path.join(temp_data_dir, csv_file)  # Полный путь к файлу
+        with open(csv_file_path, 'w', newline='') as csvfile:
             writer = csv.writer(csvfile, delimiter=';')
             # Записываем данные в CSV
             writer.writerows(results)
-        logging.info(f"Результаты выгружены в {csv_file}")
+        logging.info(f"Результаты выгружены в {csv_file_path}")
     except Exception as e:
         logging.error(f"Ошибка при выгрузке результатов в CSV: {e}")
 
@@ -152,8 +159,9 @@ def export_ids_from_monitoring(config):
     with monitoring_conn:
         with monitoring_conn.get_cursor() as cur:
             for account_type in ['opening', 'closing']:
+                csv_filename = f"ids_{account_type}_ils.csv"  # Имя файла
                 query = f'SELECT DISTINCT acc_id FROM master_{account_type}_ils;'
-                export_result = db_ops.execute_query(query, csv_file=f"ids_{account_type}_ils.csv")
+                export_result = db_ops.execute_query(query, csv_file=csv_filename)
 
                 if export_result is None:
                     logging.error(f"Не удалось извлечь идентификаторы для {account_type}.")
@@ -186,7 +194,7 @@ def export_data_from_historical(config, cur_dir_path):
                     table_historical, 'acc_id'
                 )
 
-                directory_csv_portions = path.join(cur_dir_path, f"{table_historical}")
+                directory_csv_portions = path.join(cur_dir_path, temp_data_dir, f"{table_historical}")
                 create_directory(directory_csv_portions)
                 clear_directory(directory_csv_portions)
 
