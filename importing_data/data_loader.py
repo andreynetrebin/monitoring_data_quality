@@ -1,9 +1,14 @@
 import logging
+from os import path
 from database.db_schema import create_netezza_table
 
+# Директория для загрузки CSV-файлов
+temp_data_dir = 'temp_data'
 
-def load_csv_to_table(cur, csv_file, table_name):
+
+def load_csv_to_table(cur, csv_filename, table_name):
     """Загрузка данных из CSV файла в таблицу."""
+    csv_file = path.join(temp_data_dir, csv_filename)  # Полный путь к файлу
     try:
         with open(csv_file, 'r') as f:
             next(f)  # Пропустить заголовок
@@ -15,14 +20,14 @@ def load_csv_to_table(cur, csv_file, table_name):
         return False  # Возвращаем False при ошибке
 
 
-def load_data_from_csv(cur, csv_file, table_name):
+def load_data_from_csv(cur, csv_filename, table_name):
     """
     Загрузка данных из CSV-файла в таблицу базы данных.
     :param cur: Курсор для выполнения SQL-запросов.
-    :param csv_file: Путь к CSV-файлу.
+    :param csv_filename: Имя CSV-файла.
     :param table_name: Имя таблицы, в которую будут загружены данные.
     """
-    load_csv_to_table(cur, csv_file, table_name)
+    load_csv_to_table(cur, csv_filename, table_name)
 
 
 def load_data_to_netezza_from_select(conn, table_name, select_query, distribute_column, directory, output_filename):

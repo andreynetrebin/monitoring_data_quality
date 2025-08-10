@@ -1,11 +1,12 @@
 import logging
 from datetime import datetime
 import time
+from os import path
 from database.db_connection import DatabaseConnection
-from export_data.report_export import perform_check_and_export
+from exporting_data.report_export import perform_check_and_export
 from database.queries import check_query1, check_query2, check_query3, check_query4, check_query5, check_query6, \
     check_query7
-
+from utils.file_utils import create_directory
 
 def perform_checks_data(config):
     """Проведение проверок и формирование отчета."""
@@ -15,6 +16,11 @@ def perform_checks_data(config):
 
     from database.db_operations import DBOperations
     db_ops = DBOperations(monitoring_conn, db_type=config['monitoring_db']['type'])
+
+    # Создание директории для сохранения результатов
+    current_date = datetime.now().strftime("%Y-%m-%d")  # Формат текущей даты
+    result_directory = path.join('result_data', current_date)
+    create_directory(result_directory)
 
     with monitoring_conn:
         with monitoring_conn.get_cursor() as cur:
@@ -41,6 +47,16 @@ def perform_checks_data(config):
                         # Подсчет общего количества записей в таблицах
                         total_opening_records = db_ops.count_total_records('master_opening_ils')
                         total_closing_records = db_ops.count_total_records('master_closing_ils')
+
+                        historical_conn = DatabaseConnection(config['historical_db'])
+                        db_ops_historical = DBOperations(historical_conn, db_type=config['historical_db']['type'])
+                        with historical_conn:
+                            with historical_conn.get_cursor() as cur_historical:
+                                total_historical_opening_records = db_ops_historical.count_total_records(
+                                    'vlg_mic_historical_opening_ils')
+                                total_historical_closing_records = db_ops_historical.count_total_records(
+                                    'vlg_mic_historical_closing_ils')
+
                         report_lines.append(
                             "Проверка проводилась по данным полученным из ЕЦП ХОАД в сравнение с их состоянием в исторической системе (СПУ)")
                         report_lines.append("по открытым лицевым счетам после 12.05.2024 и умершим после 12.05.2024")
@@ -51,24 +67,36 @@ def perform_checks_data(config):
                         db_ops.insert_check_result("Количество ИЛС открытых", total_opening_records)
                         db_ops.insert_check_result("Количество ИЛС умерших", total_closing_records)
 
+                        db_ops.insert_check_result("Количество ИЛС открытых в исторической системе",
+                                                   total_historical_opening_records)
+                        db_ops.insert_check_result("Количество ИЛС умерших в исторической системе",
+                                                   total_historical_closing_records)
+
                         # Выполнение проверок
                         perform_check_and_export(db_ops, db_ops_integrating, cur, check_query1,
-                                                 'отсутствующие_открытые_лицевые_счета', report_lines)
+                                                 'открытые_лицевые_счета,_которые_отсутствуют_в_исторической_системе',
+                                                 report_lines)
                         perform_check_and_export(db_ops, db_ops_integrating, cur, check_query2,
-                                                 'закрытые_открытые_лицевые_счета', report_lines)
+                                                 "открытые_лицевые_счета,_у_которых_в_исторической_системе_статус_отличный_от_статуса_'Актуальный'",
+                                                 report_lines)
                         perform_check_and_export(db_ops, db_ops_integrating, cur, check_query3,
-                                                 'другой_регион_открытия_лицевых_счетов', report_lines)
+                                                 'открытые_лицевые_счета,_у_которых_другой_регион_открытия_в_исторической_системе',
+                                                 report_lines)
                         perform_check_and_export(db_ops, db_ops_integrating, cur, check_query4,
-                                                 'отсутствующие_закрытые_лицевые_счета', report_lines)
+                                                 'закрытые_лицевые_счета,_которые_отсутствуют_в_исторической_системе',
+                                                 report_lines)
                         perform_check_and_export(db_ops, db_ops_integrating, cur, check_query5,
-                                                 'не_закрытые_закрытые_лицевые_счета', report_lines)
+                                                 "закрытые_лицевые_счета,_у_которых_в_исторической_системе_статус_отличный_от_статусов_'Умер',_'Упразднен'",
+                                                 report_lines)
                         perform_check_and_export(db_ops, db_ops_integrating, cur, check_query6,
-                                                 'другой_регион_закрытия_лицевых_счетов', report_lines)
-                        perform_check_and_export(db_ops, db_ops_integrating, cur, check_query7, 'другая_дата_смерти',
+                                                 'закрытые_лицевые_счета,_у_которых_другой_регион_закрытия_в_исторической_системе',
+                                                 report_lines)
+                        perform_check_and_export(db_ops, db_ops_integrating, cur, check_query7,
+                                                 'закрытые_лицевые_счета,_у_которых_другая_дата_смерти_в_исторической_системе',
                                                  report_lines)
 
                         # Формирование отчета
-                        report_file = 'отчет.txt'
+                        report_file = path.join(result_directory, 'отчет.txt')  # Обновленный путь к отчету
                         with open(report_file, 'w') as f:
                             f.write("Отчет о проверках данных\n")
                             f.write("=" * 30 + "\n")
@@ -76,7 +104,9 @@ def perform_checks_data(config):
                             f.write("=" * 30 + "\n")
                             for line in report_lines:
                                 f.write(line + "\n")
-                        logging.info(f"Отчет сохранен в '{report_file}'.")
+                        end_time = time.time()
+                        logging.info(
+                            f"Отчет сохранен в '{report_file}'. Время выполнения: {end_time - start_time:.2f} секунд.")
 
                     except Exception as e:
                         logging.error(f"Ошибка при выполнении запросов: {e}")

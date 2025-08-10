@@ -37,5 +37,9 @@ def load_db_config(filename='config.ini'):
             'host': config.get('integrating_db', 'host'),
             'port': config.get('integrating_db', 'port'),
             'type': config.get('integrating_db', 'type')
+        },
+        'ip_for_dashboard': {
+            'ip_address': config.get('ip_for_dashboard', 'ip_address'),
         }
+
     }

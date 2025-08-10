@@ -3,11 +3,12 @@ import json
 import sys
 from os import getcwd, path
 from utils.logger import setup_logger
-from import_data.csv_import import import_data_to_monitoring, import_data_to_historical, \
+from importing_data.csv_import import import_data_to_monitoring, import_data_to_historical, \
     import_data_from_historical_to_monitoring
-from export_data.csv_export import export_data_from_master, export_ids_from_monitoring, export_data_from_historical
+from exporting_data.csv_export import export_data_from_master, export_ids_from_monitoring, export_data_from_historical
 from config import load_db_config
-from monitoring.checks import perform_checks_data
+from monitoring_data.checks import perform_checks_data
+from utils.file_utils import clear_directory
 
 STATE_FILE = 'processing_state.json'
 
@@ -43,7 +44,8 @@ def main():
     # Чтение состояния обработки
     state = read_processing_state()
     current_step = state.get('current_step', 0)
-
+    # Очистка временного каталога
+    clear_directory(path.join(cur_dir_path, 'temp_data'))
     try:
         if current_step < 1 and process_accounts(config, 'opening'):
             write_processing_state({'current_step': 1})
@@ -88,9 +90,9 @@ def main():
 
     try:
         if current_step < 7:
-            perform_checks_data(config)
-            logging.info("Все этапы обработки уже выполнены. Сбрасываем состояние.")
-            write_processing_state({'current_step': 0})
+            if perform_checks_data(config):
+                logging.info("Все этапы обработки уже выполнены. Сбрасываем состояние.")
+                write_processing_state({'current_step': 0})
     except Exception as e:
         logging.error(f"Ошибка при выполнении 7-го этапа: {e}")
         sys.exit(1)  # Завершение работы скрипта с кодом 1

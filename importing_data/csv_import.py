@@ -1,9 +1,11 @@
-# csv_import.py
 import logging
 import time
-from os import path
+from os import path, listdir
 from database.db_connection import DatabaseConnection
 from .data_loader import load_csv_to_table
+
+# Директория для импорта CSV-файлов
+temp_data_dir = 'temp_data'
 
 
 def import_data_to_monitoring(config, csv_filename, account_type):
@@ -36,9 +38,12 @@ def import_data_to_monitoring(config, csv_filename, account_type):
     db_ops.drop_table(table_name)
     db_ops.create_postgresql_table(table_name, columns[account_type], ['acc_id'])
 
+    # Обновленный путь к CSV-файлу
+    csv_file_path = path.join(temp_data_dir, csv_filename)
+
     with monitoring_conn:
         with monitoring_conn.get_cursor() as cur:
-            import_result = load_csv_to_table(cur, csv_filename, table_name)
+            import_result = load_csv_to_table(cur, csv_file_path, table_name)
 
         if import_result:
             monitoring_conn.commit()
@@ -67,7 +72,7 @@ def import_data_to_historical(config, cur_dir_path):
         with historical_conn.get_cursor() as cur:
             for account_type in ['opening', 'closing']:
                 table_ids = f'{prefix_table_name}_ids_{account_type}_ils'
-                csv_external_ids = path.join(cur_dir_path, f'ids_{account_type}_ils.csv')
+                csv_external_ids = path.join(temp_data_dir, f'ids_{account_type}_ils.csv')  # Обновленный путь
 
                 db_historical_ops.drop_table(table_ids)
                 db_historical_ops.create_netezza_table(table_ids, {'acc_id': 'BIGINT'}, 'acc_id')
@@ -96,7 +101,8 @@ def import_data_from_historical_to_monitoring(config, cur_dir_path):
     with monitoring_conn:
         with monitoring_conn.get_cursor() as cur:
             for account_type in ['opening', 'closing']:
-                directory_csv_portions = path.join(cur_dir_path, f"vlg_mic_historical_{account_type}_ils")
+                directory_csv_portions = path.join(cur_dir_path, temp_data_dir,
+                                                   f"vlg_mic_historical_{account_type}_ils")
                 csv_files_portions = [f for f in listdir(directory_csv_portions) if f.endswith('.csv')]
 
                 columns = {
