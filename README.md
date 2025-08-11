@@ -82,8 +82,8 @@ monitoring_data_quality/
 
 ## Стек технологий
 
-- **Python**: 3.8
-- **PostgreSQL**: 9
+- **Python**: 3.8.5
+- **PostgreSQL**: 9.4
 - **Pandas**: для обработки данных
 - **Dash**: для визуализации дашборда
 
