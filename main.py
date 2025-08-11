@@ -45,7 +45,8 @@ def main():
     state = read_processing_state()
     current_step = state.get('current_step', 0)
     # Очистка временного каталога
-    clear_directory(path.join(cur_dir_path, 'temp_data'))
+    if current_step == 0:
+        clear_directory(path.join(cur_dir_path, 'temp_data'))
     try:
         if current_step < 1 and process_accounts(config, 'opening'):
             write_processing_state({'current_step': 1})

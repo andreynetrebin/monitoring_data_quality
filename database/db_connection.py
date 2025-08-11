@@ -1,6 +1,10 @@
 import logging
 import psycopg2
 import nzpy
+from utils.logger import setup_logger  # Импортируем функцию настройки логирования
+
+# Настройка логирования
+setup_logger()  # Вызываем функцию для настройки логирования
 
 
 class DatabaseConnection:

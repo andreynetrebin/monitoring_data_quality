@@ -1,19 +1,14 @@
 import logging
-from os import path
 from database.db_schema import create_netezza_table
-
-# Директория для загрузки CSV-файлов
-temp_data_dir = 'temp_data'
 
 
 def load_csv_to_table(cur, csv_filename, table_name):
     """Загрузка данных из CSV файла в таблицу."""
-    csv_file = path.join(temp_data_dir, csv_filename)  # Полный путь к файлу
     try:
-        with open(csv_file, 'r') as f:
+        with open(csv_filename, 'r') as f:
             next(f)  # Пропустить заголовок
             cur.copy_expert(f"COPY public.{table_name} FROM STDIN WITH CSV DELIMITER ';'", f)
-        logging.info(f"Данные из {csv_file} загружены в таблицу {table_name}.")
+        logging.info(f"Данные из {csv_filename} загружены в таблицу {table_name}.")
         return True
     except Exception as e:
         logging.error(f"Ошибка при загрузке данных из CSV: {e}")
