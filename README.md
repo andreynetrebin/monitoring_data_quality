@@ -1,5 +1,6 @@
 # Мониторинг качества данных состояния лицевых счетов
-<img width="890" height="485" alt="monitoring_data_quality" src="https://github.com/user-attachments/assets/1bf900bb-9243-4bfd-8923-cc6a00004043" />
+<img width="890" height="485" alt="monitoring_data_quality" src="https://github.com/user-attachments/assets/644e8d6d-c267-40cb-a103-e3e05466b78c" />
+
 
 Проект мониторинга качества данных состояния лицевых счетов направлен на обеспечение целостности и актуальности данных
 между мастер-системой и исторической системой. В рамках проекта реализованы следующие этапы, которые позволяют
