@@ -10,6 +10,7 @@ from utils.file_utils import clear_directory, create_directory
 
 # Создание директории temp_data, если она не существует
 temp_data_dir = 'temp_data'
+result_data_dir = 'result_data'
 create_directory(temp_data_dir)
 
 
@@ -26,10 +27,14 @@ def export_data_to_csv_with_copy(cur, query, csv_file):
         return False  # Возвращаем False при ошибке
 
 
-def export_data_to_csv(cur, query, csv_file):
+def export_data_to_csv(cur, query, csv_file, results=None):
     """Выгрузка данных из базы данных в CSV файл с ручной записью заголовков и данных."""
     try:
-        csv_file_path = path.join(temp_data_dir, csv_file)  # Полный путь к файлу
+        if results:
+            csv_file_path = csv_file  # Полный путь к файлу
+        else:
+            csv_file_path = path.join(temp_data_dir, csv_file)  # Полный путь к файлу
+
         with open(csv_file_path, 'w', newline='') as csvfile:
             cur.execute(query)
             # Получаем названия колонок
@@ -51,7 +56,7 @@ def load_acc_ids_from_csv(file_path, encoding='utf-8'):
 
 
 # Объединение двух CSV-файлов по acc_id
-def merge_csv_files(file1, file2, output_file, encoding='utf-8'):
+def merge_csv_files(file1, file2, output_file, encoding='utf-8', results=None):
     """Объединение двух CSV-файлов по acc_id с учетом отсутствующих значений."""
     df1 = pd.read_csv(file1, encoding=encoding, sep=';')  # Загрузка первого файла
     df2 = pd.read_csv(file2)  # Загрузка второго файла
@@ -60,7 +65,10 @@ def merge_csv_files(file1, file2, output_file, encoding='utf-8'):
     merged_df = pd.merge(df1, df2, on='acc_id', how='left')  # Используем left join
 
     # Сохранение объединенных данных в новый CSV-файл
-    output_file_path = path.join(temp_data_dir, output_file)  # Полный путь к выходному файлу
+    if results:
+        output_file_path = output_file
+    else:
+        output_file_path = path.join(temp_data_dir, output_file)  # Полный путь к выходному файлу
     merged_df.to_csv(output_file_path, index=False, sep=';', encoding=encoding)  # Указываем разделитель
     logging.info(f"Объединенные данные сохранены в '{output_file_path}'.")
 

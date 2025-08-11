@@ -18,7 +18,7 @@ def perform_check_and_export(db_ops, db_ops_integrating, cur, check_query, check
     if count > 0:
         # Обновление путей к файлам
         csv_file_path = path.join(result_directory, f'{check_name}.csv')
-        export_data_to_csv(cur, check_query, csv_file_path)
+        export_data_to_csv(cur, check_query, csv_file_path, results=True)
 
         acc_ids = load_acc_ids_from_csv(csv_file_path, encoding='cp1251')
 
@@ -34,7 +34,7 @@ def perform_check_and_export(db_ops, db_ops_integrating, cur, check_query, check
             results_df.to_csv(integra_csv_file, index=False)
 
             result_csv_file = path.join(result_directory, f'{check_name}_доб_интеграция.csv')
-            merge_csv_files(csv_file_path, integra_csv_file, result_csv_file, encoding='cp1251')
+            merge_csv_files(csv_file_path, integra_csv_file, result_csv_file, encoding='cp1251', results=True)
 
             report_lines.append(f"{check_name.replace('_', ' ').capitalize()}:")
             report_lines.append(f"   - Количество записей: {count}")

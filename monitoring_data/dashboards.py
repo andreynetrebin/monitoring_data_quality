@@ -55,7 +55,13 @@ app = dash.Dash(__name__)
 
 # Определение макета приложения
 app.layout = html.Div([
-    html.H1("Дашборд проверок данных по лицевым счетам"),
+    html.H1("Дашборд проверок данных по лицевым счетам", style={
+        'fontSize': '36px',  # Размер шрифта
+        'color': '#333',  # Цвет текста
+        'textAlign': 'center',  # Выравнивание по центру
+        'marginBottom': '20px',  # Отступ снизу
+        'textShadow': '2px 2px 4px rgba(0, 0, 0, 0.2)',  # Тень текста
+    }),
 
     # Блок для карточек верхнего уровня с градиентом
     html.Div(id='card-container-top', style={
@@ -76,9 +82,10 @@ app.layout = html.Div([
         'gap': '20px',
         'margin-bottom': '20px',
         'justify-content': 'center',
-        'background': '#f0f0f0',  # Однотонный фон
+        'background': '#f9f9f9',  # Светлый фон
         'padding': '20px',
-        'borderRadius': '10px'
+        'borderRadius': '10px',
+        'boxShadow': '0 4px 8px rgba(0, 0, 0, 0.1)',  # Тень блока
     }),
 
     dcc.Interval(
@@ -170,9 +177,15 @@ def update_graphs(n):
     for check in bottom_checks['check_description']:
         row = latest_values[latest_values['check_description'] == check].iloc[0]
         card = html.Div([
-            html.Div(check, style={'flex': '1', 'textAlign': 'left'}),  # Название слева
-            html.Div(f"{format_number(row['record_count'])}", style={'flex': '1', 'textAlign': 'right'})
-            # Значение справа
+            html.Div(check, style={'flex': '1', 'textAlign': 'left', 'padding': '10px'}),  # Название слева
+            html.Div(f"{format_number(row['record_count'])}", style={
+                'flex': '1',
+                'textAlign': 'right',
+                'padding': '10px',
+                'background': '#e0f7fa',  # Подсвеченный фон для значения
+                'borderLeft': '2px solid #00796b',  # Граница слева
+                'borderRadius': '5px',  # Закругление углов
+            })  # Значение справа
         ], style={
             'display': 'flex',  # Использование flexbox
             'alignItems': 'center',  # Вертикальное выравнивание по центру
