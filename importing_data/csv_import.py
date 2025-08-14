@@ -72,8 +72,7 @@ def import_data_to_historical(config, cur_dir_path):
         with historical_conn.get_cursor() as cur:
             for account_type in ['opening', 'closing']:
                 table_ids = f'{prefix_table_name}_ids_{account_type}_ils'
-                csv_external_ids = path.join(cur_dir_path, temp_data_dir,
-                                             f'ids_{account_type}_ils.csv')  # Обновленный путь
+                csv_external_ids = path.join(cur_dir_path, temp_data_dir, f'ids_{account_type}_ils.csv')  # Обновленный путь
                 db_historical_ops.drop_table(table_ids)
                 db_historical_ops.create_netezza_table(table_ids, {'acc_id': 'BIGINT'}, 'acc_id')
                 import_result = db_historical_ops.insert_to_netezza_from_select_external_csv(table_ids,
