@@ -8,6 +8,7 @@ from database.queries import check_query1, check_query2, check_query3, check_que
     check_query7
 from utils.file_utils import create_directory
 
+
 def perform_checks_data(config):
     """Проведение проверок и формирование отчета."""
     start_time = time.time()
@@ -107,6 +108,8 @@ def perform_checks_data(config):
                         end_time = time.time()
                         logging.info(
                             f"Отчет сохранен в '{report_file}'. Время выполнения: {end_time - start_time:.2f} секунд.")
+                        return True
 
                     except Exception as e:
                         logging.error(f"Ошибка при выполнении запросов: {e}")
+                        return False
