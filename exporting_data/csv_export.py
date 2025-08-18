@@ -213,6 +213,7 @@ def export_data_from_historical(config, cur_dir_path):
 
                 if not export_result:
                     logging.error(f"Не удалось выгрузить данные для {account_type} из исторической системы.")
+                    break
                     return False
 
     end_time = time.time()
